@@ -1,3 +1,11 @@
+MultiWOZ_2.1/
+MultiWOZ2.4/
+results/
+src/DST/results_single_old/
+src/DST/results_single/
+src/DST/processed_results/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -1,0 +1,3 @@
+Given the following list of INTENTS, do intent classification on the sentence provided as SENTENCE, just generate the intent and nothing more:\n\nINTENTS:\n{INTENTS}\nSENTENCE:
+Given the following list of INTENTS, do intent classification on the sentence provided as SENTENCE and just generate the 2 most likely intent and nothing more:\nINTENTS:\n{INTENTS}\nSENTENCE:
+Given the following list of INTENTS, do intent classification on the sentence provided as SENTENCE and just generate the 3 most likely intent and nothing more:\nINTENTS:\n{INTENTS}\nSENTENCE:
