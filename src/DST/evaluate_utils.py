@@ -66,7 +66,8 @@ def unpack_belief_states(belief_state, mode):
         if isinstance(belief_state, str): #gold should be json by default, if misformatted into str for some reason this will take care of it
             rx = re.compile(r'"[^"]*"(*SKIP)(*FAIL)|\'')
             belief_state = json.loads(rx.sub('"', belief_state.lower()))
-
+        if not belief_state:
+            return ["none-none"]
         belief_state = nested_fix(belief_state, fix_typos)
         for domain_act in belief_state:
             slot_values = belief_state[domain_act]
