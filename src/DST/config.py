@@ -32,7 +32,7 @@ CONFIG = {
                    "instruction_with_slots_recorrect":"""You are a task-oriented dialogue system focusing on doing Dialogue State Tracking. Using the following SLOTS provided, another faulty system already generated the belief state of the last dialogue turn in the following conversation between a USER and a SYSTEM in a task-oriented dialogue setting. You should generate the new and correct belief state. The results should be in json format with the slot name as the primary key, and the retrieved value associated to the slot, for example {'slot1':'value1', 'slot2':'value2', etc...}:""",
                    "instruction_with_slots_recorrect_2":"""Using the following SLOTS provided with their description, another faulty system already generated the WRONG BELIEF STATES of the last dialogue turn in the following conversation between a USER and a SYSTEM in a task-oriented dialogue setting. You should generate the new and CORRECTED BELIEF STATES. The results should be in json format following this format: {'slot1':'value1', 'slot2':'value2', etc...}.""",
                    "instruction_with_slots_recorrect_3":"""Using the following SLOTS provided, another system generated the WRONG BELIEF STATES of the last dialogue turn in the conversation between a USER and a SYSTEM given in the CONTEXT, in a task-oriented dialogue setting. You should generate the CORRECTED BELIEF STATES. The results should be in json format following this format: {'slot1':'value1', 'slot2':'value2', etc...}.""",
-                    "instruction_with_slots_recorrect_4":"""A task-oriented dialogue system has generated the following belief state: {belief_state} for the following dialogue. The belief states are slightly wrong, so use the provided SLOTS to generate the corrected belief states. The results should be in json format following this format: {'slot1':'value1', 'slot2':'value2', etc...}.""",
+                   "instruction_with_slots_recorrect_4":"""A task-oriented dialogue system has generated the following belief state: {belief_state} for the following dialogue. The belief states are slightly wrong, so use the provided SLOTS to generate the corrected belief states. The results should be in json format following this format: {'slot1':'value1', 'slot2':'value2', etc...}.""",
                    "instruction_query_database":"""""", #TODO
                    "instruction_response_generation":"""""" #TODO
                    }, 
@@ -69,6 +69,6 @@ CONFIG = {
                 "all_requestable_slots":["car", "address", "postcode", "phone", "type", "internet",  "parking", "pricerange", "food",
                                 "stars", "area", "reference", "time", "leaveat", "price", "arriveby", "id"],
                 "all_informable_slots":["parking", "pricerange", "internet", "stay", "type", "day", "people", "area", "stars", "name",
-                                "leaveat", "destination", "departure", "arriveby", "department", "food", "time"],
+                                "leaveat", "destination", "departure", "arriveby", "food", "time"],
                 }
 }

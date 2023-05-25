@@ -5,6 +5,7 @@ import pandas as pd
 from tqdm import tqdm
 from langchain import PromptTemplate
 
+from dst import SLOTS_DESCRIPTIONS
 from config import CONFIG
 
 
@@ -21,43 +22,51 @@ class PromptConstructor():
         if with_all_slots:
             domains = "all"
         
-        if not with_slot_description:
-            if domains == "all":
-                if with_req_inf_differentiation:
-                    req_slots = ", ".join(self.config["multiwoz21"]["all_requestable_slots"])
-                    inf_slots = ", ".join(self.config["multiwoz21"]["all_informable_slots"])
-                else:
-                    slots = set(self.config["multiwoz21"]["all_requestable_slots"] + 
-                                self.config["multiwoz21"]["all_informable_slots"])
-                    slots = ", ".join(slots)
-            elif not isinstance(domains, list):
-                raise ValueError("""Provided domain should be either 'all' or list of valid domain names:
-                                    - for multiwoz2.1 and 2.4: taxi, restaurant, hotel, train, attraction 
-                                    - for SGD: To-do""")
-            else:
-                req_slots = ""
-                inf_slots = ""
-                domain_req_slots = []
-                domain_inf_slots = []
-                for domain in domains:
-                    domain_req_slots += self.config["multiwoz21"]["requestable_slots"][domain]
-                    domain_inf_slots += self.config["multiwoz21"]["informable_slots"][domain]
-                if with_req_inf_differentiation:
-                    domain_req_slots = set(domain_req_slots)
-                    domain_inf_slots = set(domain_inf_slots)
-                    req_slots += ", ".join(domain_req_slots)
-                    inf_slots += ", ".join(domain_inf_slots)
-                else:
-                    slots = set(domain_req_slots + domain_inf_slots)
-                    slots = ", ".join(slots)
+        if with_slot_description:
+            with_req_inf_differentiation = False #Slot description is the discriminator
 
+        if domains == "all":
             if with_req_inf_differentiation:
-                slots_info = f"Requestable slots: {req_slots}\nInformable slots: {inf_slots}"
+                req_slots = ", ".join(self.config["multiwoz21"]["all_requestable_slots"])
+                inf_slots = ", ".join(self.config["multiwoz21"]["all_informable_slots"])
             else:
-                slots_info = f"{slots}"
-
+                slots = set(self.config["multiwoz21"]["all_requestable_slots"] + 
+                            self.config["multiwoz21"]["all_informable_slots"])
+                slots = ", ".join(slots)
+        elif not isinstance(domains, list):
+            raise ValueError("""Provided domain should be either 'all' or list of valid domain names:
+                                - for multiwoz2.1 and 2.4: taxi, restaurant, hotel, train, attraction 
+                                - for SGD: To-do""")
         else:
-            raise ValueError("Not Implemented Yet")
+            req_slots = ""
+            inf_slots = ""
+            domain_req_slots = []
+            domain_inf_slots = []
+            for domain in domains:
+                domain_req_slots += self.config["multiwoz21"]["requestable_slots"][domain]
+                domain_inf_slots += self.config["multiwoz21"]["informable_slots"][domain]
+            if with_req_inf_differentiation:
+                domain_req_slots = set(domain_req_slots)
+                domain_inf_slots = set(domain_inf_slots)
+                req_slots += ", ".join(domain_req_slots)
+                inf_slots += ", ".join(domain_inf_slots)
+            else:
+                slots = set(domain_req_slots + domain_inf_slots)
+                slots = ", ".join(slots)
+
+        if with_req_inf_differentiation:
+            slots_info = f"Requestable slots: {req_slots}\nInformable slots: {inf_slots}"
+        else:
+            slots_info = f"{slots}"
+
+        if with_slot_description:
+            slots = slots.split(", ")
+            slots_info = ""
+            for slot in slots:
+                if slot not in self.config["multiwoz21"]["all_informable_slots"]:
+                    continue
+                slots_info += f"name: {slot}, description: {SLOTS_DESCRIPTIONS[slot]}\n"
+            slots_info = slots_info[:-2]
         
         return slots_info
     

@@ -79,9 +79,9 @@ def predict(dataset, model, save_path, start_idx, save_every, debug):
 
 
 
-def predict_correct_bs(results_df, model, config, save_path, save_every):
-    template = config["PROMPT_TEMPLATES"]["template_with_slots_recorrect_4"]
-    instruction = config["INSTRUCTIONS"]["instruction_with_slots_recorrect_4"]
+def predict_correct_bs(results_df, dataset, model, config, save_path, save_every, with_slot_description):
+    template = config["PROMPT_TEMPLATES"]["template_with_slots_recorrect"]
+    instruction = config["INSTRUCTIONS"]["instruction_with_slots_recorrect_3"]
     prompt_template = PromptTemplate(input_variables= template["input_variables"],
                                      template = template["template"])
     model_used = []
@@ -101,17 +101,28 @@ def predict_correct_bs(results_df, model, config, save_path, save_every):
 
         original_prompt = row["prompt"]
         sample_id = row["id"]
-        slots, context = original_prompt.split("CONTEXT:")[0], original_prompt.split("CONTEXT:")[1]
-        slots = slots.split("SLOTS:")[1]
+        if not with_slot_description:
+            slots, context = original_prompt.split("CONTEXT:")[0], original_prompt.split("CONTEXT:")[1]
+            slots = slots.split("SLOTS:")[1]
+            slots = slots.replace("\n", "")
+        else:
+            dialogue_id = row["id"]
+            #Get the prompt in dataset with same id
+            if "description" not in dataset["prompt"][0]:
+                raise ValueError("Missing descriptions in the dataset provided, make sure the dataset is built with argument with_slot_description=True")
+            original_prompt = dataset.loc[dataset["id"] == dialogue_id]["prompt"].item()
+            slots, context = original_prompt.split("CONTEXT:")[0], original_prompt.split("CONTEXT:")[1]
+            slots = slots.split("SLOTS:")[1] 
+        
         if len(template["input_variables"]) == 4:
             new_prompt = prompt_template.format(instruction=instruction.replace("\n", ""),
-                                                slots=slots.replace("\n", ""),
+                                                slots=slots,
                                                 dialogue_context=context.replace("\n", ""),
                                                 belief_states=belief_states)
         elif len(template["input_variables"]) == 3:
             instruction = instruction.replace(r"{belief_state}", str(belief_states))
             new_prompt = prompt_template.format(instruction=instruction.replace("\n", ""),
-                                                slots=slots.replace("\n", ""),
+                                                slots=slots,
                                                 dialogue_context=context.replace("\n", ""))            
 
         retry_count = 0
@@ -144,7 +155,7 @@ def predict_correct_bs(results_df, model, config, save_path, save_every):
     
 
     if len(results_df) == len(temp_prompts):
-        results_df["prompt_recorred"] = temp_prompts
+        results_df["prompt_recorrected"] = temp_prompts
 
     results_df["model_used"] = model_used
     results_df["correct_preds"] = preds
@@ -155,43 +166,42 @@ def predict_correct_bs(results_df, model, config, save_path, save_every):
         
 
 
-
-
-
 if __name__ == "__main__":
 
-    # mwoz_path = "/home/willy/InstrucTOD/MultiWOZ_2.1/"
-    # dialog_history_limit = 20 #+1 utterances
-    # with_slot_description = False
-    # single_domain_only = False
-    # with_req_inf_differentiation = False
-    # with_all_slots = True
-    # mwoz = MWOZ_Dataset(config=CONFIG, 
-    #                     mwoz_path=mwoz_path,
-    #                     dialog_history_limit=dialog_history_limit,
-    #                     with_slot_description=with_slot_description,
-    #                     with_req_inf_differentiation=with_req_inf_differentiation,
-    #                     single_domain_only=single_domain_only,
-    #                     with_all_slots=with_all_slots)
-    # dataset = mwoz.dataset
+    mwoz_path = "/home/willy/instructod/MultiWOZ_2.1/"
+    dialog_history_limit = 0 #+1 utterances
+    with_slot_description = True
+    single_domain_only = False
+    with_req_inf_differentiation = False
+    with_all_slots = True
+    mwoz = MWOZ_Dataset(config=CONFIG, 
+                        mwoz_path=mwoz_path,
+                        dialog_history_limit=dialog_history_limit,
+                        with_slot_description=with_slot_description,
+                        with_req_inf_differentiation=with_req_inf_differentiation,
+                        single_domain_only=single_domain_only,
+                        with_all_slots=with_all_slots)
+    dataset = mwoz.dataset
 
     model = "gpt-3.5-turbo"
     save_every = 25
-    start_idx = 0
+    start_idx = 2901
     end_idx = "end"
     debug = False
     
-    # save_path = f"/home/willy/InstrucTOD/src/DST/results_single/{model}_{start_idx}-{end_idx}_debug{debug}_singleDomainOnly{single_domain_only}_withSlotDescription{with_slot_description}_withSlotDifferentiation{with_req_inf_differentiation}_withAllSlots{with_all_slots}_dialogHistoryLimit{dialog_history_limit}_prompt3.csv"
-    # results_df = predict(dataset, model, save_path, start_idx, save_every, debug)
+    save_path = f"/home/willy/instructod/src/DST/results_single/{model}_{start_idx}-{end_idx}_debug{debug}_singleDomainOnly{single_domain_only}_withSlotDescription{with_slot_description}_withSlotDifferentiation{with_req_inf_differentiation}_withAllSlots{with_all_slots}_dialogHistoryLimit{dialog_history_limit}_prompt3.csv"
+    results_df = predict(dataset, model, save_path, start_idx, save_every, debug)
 
 
     #------------------------------------------------------
-    print("RUNNING DST RECORRECTION")
-    save_path = f"/home/willy/InstrucTOD/src/DST/results_single/gpt-3.5-turbo_0-end_recorrect_singleDomainOnlyTrue_withSlotDescriptionFalse_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit0_prompt4.csv"
-    load_path = "/home/willy/InstrucTOD/src/DST/results_single/gpt-3.5-turbo_0-end_singleDomainOnlyTrue_withSlotDescriptionFalse_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit0_prompt3.csv"
-    previous_results = pd.read_csv(load_path)
-    results_df = predict_correct_bs(results_df=previous_results,
-                                    model=model, 
-                                    config=CONFIG, 
-                                    save_path=save_path,
-                                    save_every=save_every)
+    # print("RUNNING DST RECORRECTION")
+    # save_path = "/home/willy/instructod/src/DST/results_single/gpt-4_0-end_recorrectSlotDescFalse_debugFalse_singleDomainOnlyTrue_withSlotDescriptionFalse_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit0_prompt3.csv"
+    # load_path = "/home/willy/instructod/src/DST/results_single/gpt-4_0-end_debugFalse_singleDomainOnlyTrue_withSlotDescriptionFalse_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit0_prompt3.csv"
+    # previous_results = pd.read_csv(load_path)
+    # results_df = predict_correct_bs(results_df=previous_results,
+    #                                 dataset=dataset,
+    #                                 model=model, 
+    #                                 config=CONFIG, 
+    #                                 save_path=save_path,
+    #                                 save_every=save_every,
+    #                                 with_slot_description=with_slot_description)

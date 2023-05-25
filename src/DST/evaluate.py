@@ -89,29 +89,41 @@ if __name__ == "__main__":
 
     #gpt4 single domain only
     # results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-4_0-end_singleDomainOnlyTrue_withSlotDescriptionFalse_withSlotDifferentiationFalse_dialogHistoryLimit0_prompt3.csv"
-    
+    #gpt4 single domain only - all slot 
+    # results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-4_0-end_debugFalse_singleDomainOnlyTrue_withSlotDescriptionFalse_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit0_prompt3.csv"
+    #gpt4 single domain only - all slot - slot description
+    # results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-4_0-end_debugFalse_singleDomainOnlyTrue_withSlotDescriptionTrue_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit0_prompt3.csv"
+
     #gpt3.5 single domain only
     # results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-3.5-turbo_0-end_singleDomainOnlyTrue_withSlotDescriptionFalse_withSlotDifferentiationFalse_dialogHistoryLimit0_prompt2.csv"
     #gpt3.5 multi domain only
     # results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-3.5-turbo_0-end_singleDomainOnlyFalse_withSlotDescriptionFalse_withSlotDifferentiationFalse_dialogHistoryLimit0_prompt3_latestSave.csv"
     #gpt3.5 single domain only - with all slots (reported result)
     # results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-3.5-turbo_0-end_singleDomainOnlyFalse_withSlotDescriptionFalse_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit0_prompt3.csv"
+    #gpt3.5 sigle domain only - with all slots - with slot descriptions
+    # results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-3.5-turbo_0-end_debugFalse_singleDomainOnlyTrue_withSlotDescriptionTrue_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit0_prompt3.csv"
     #gpt3.5 multi domain - with all slots - dh3
     # results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-3.5-turbo_0-end_debugFalse_singleDomainOnlyFalse_withSlotDescriptionFalse_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit2_prompt3.csv"
     #gpt3.5 multi domain - with all slots - dh5
     # results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-3.5-turbo_0-end_debugFalse_singleDomainOnlyFalse_withSlotDescriptionFalse_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit4_prompt3.csv"
     #gpt3.5 multi domain - with all slots - dhall
-    results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-3.5-turbo_0-end_debugFalse_singleDomainOnlyFalse_withSlotDescriptionFalse_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit20_prompt3_latestSave.csv"
+    # results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-3.5-turbo_0-end_debugFalse_singleDomainOnlyFalse_withSlotDescriptionFalse_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit20_prompt3_latestSave.csv"
 
-    recorrect = False
+    recorrect = True
     #gpt3.5 single domain only - with all slots - recorrect
     # results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-3.5-turbo_0-end_recorrect_singleDomainOnlyTrue_withSlotDescriptionFalse_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit0_prompt3.csv"
     #gpt3.5 single domain only - with all slots - recorrect - prompt1
     # results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-3.5-turbo_0-end_singleDomainOnlyTrue_withSlotDescriptionFalse_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit0_prompt3.csv"
-
+    #gpt3.5 single domain only - with all slots - with slot description - recorrect (from no slot description originally) - prompt 2
+    # results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-3.5-turbo_0-end_recorrect_singleDomainOnlyTrue_withSlotDescriptionTrue_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit0_prompt3.csv"
 
     #gpt3.5 multi domain - with all slots
     # results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-3.5-turbo_0-end_singleDomainOnlyFalse_withSlotDescriptionFalse_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit0_prompt3.csv"
+
+    #gpt4 single domain - with all slots - recorrect
+    # results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-4_0-end_recorrectSlotDescFalse_debugFalse_singleDomainOnlyTrue_withSlotDescriptionFalse_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit0_prompt3.csv"
+    #gpt4 single domain - with all slots - with slot description - recorrect
+    results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-4_0-end_recorrectSlotDescTrue_debugFalse_singleDomainOnlyTrue_withSlotDescriptionFalse_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit0_prompt3.csv"
 
     save_path = "/home/willy/instructod/src/DST/processed_results/" + results_df_path.split("/")[-1][:-4] + "_results.json"
     

@@ -9,6 +9,26 @@ SLOTS_REVERSE_REMAPPING = {
         "depart":"departure",
         "dest":"destination",}
 
+SLOTS_DESCRIPTIONS = {
+    "parking":"whether the place has parking or not",
+    "pricerange":"price budget for the place",
+    "internet":"whether the place has internet or not",
+    "stay":"stay duration in the place",
+    "type":"type of hotel building or attraction",
+    "day":"day of the week for the booking or departure",
+    "people":"number of people for booking",
+    "area":"cardinal location of place of interest",
+    "stars":"star rating of the place",
+    "name":"name of the place",
+    "leaveat":"leaving time",
+    "destination":"destination place for the trip",
+    "departure":"departure place for the trip",
+    "arriveby":"arrival time",
+    "food":"type of food",
+    "time":"time for the booking",
+}
+
+
 #Free-form remapping
 # FIXED_TYPOS_REMAPPING = {
 #     #general
