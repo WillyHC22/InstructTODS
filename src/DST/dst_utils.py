@@ -5,6 +5,7 @@ import pandas as pd
 from tqdm import tqdm
 from langchain import PromptTemplate
 
+from evaluate_utils import remapping
 from dst import SLOTS_DESCRIPTIONS
 from config import CONFIG
 
@@ -133,6 +134,7 @@ class MWOZ_Dataset(PromptConstructor):
                         "turn":[],
                         "prompt":[],
                         "domains":[],
+                        "gold_turn_bs":[],
                         "gold_bs":[],
                         "gold_act":[],
                         "gold_response":[],
@@ -205,9 +207,26 @@ class MWOZ_Dataset(PromptConstructor):
                 dialog_history_memory.append(utterance)
                 dialog_history = "".join(dialog_history_memory)
 
+            metadata = turn["metadata"]
+            bspn_dict = {}
+            if not metadata:
+                continue
+            for domain in metadata:
+                slot_values = metadata[domain]["semi"]
+                for slot in slot_values:
+                    value = slot_values[slot]
+                    if value and value not in ["not mentioned", "none"]:
+                        if domain in bspn_dict:
+                            bspn_dict[domain].append(remapping(slot))
+                            bspn_dict[domain].append(remapping(value))
+                        else:
+                            bspn_dict[domain] = [remapping(slot), remapping(value)]
+            bspn = " ".join([f"[{domain}] {' '.join(bspn_dict[domain])}" for domain in bspn_dict])
+
             self.idx += 1
             if turn_nb % 2 == 0:
-                self.dataset["gold_bs"].append(dialog_act)
+                self.dataset["gold_turn_bs"].append(dialog_act)
+                self.dataset["gold_bs"].append(bspn)
                 self.dataset["dialogue_context"].append(dialogue_context)
                 self.dataset["gold_database_result"].append(None) 
                 self.dataset["turn"].append(turn_nb//2)

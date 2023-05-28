@@ -39,11 +39,11 @@ def fix_typos(pred):
     return pred
 
 
-def remapping(pred):
-    pred = pred.lower()
-    if pred in SLOTS_REMAPPING:
-        pred = SLOTS_REMAPPING[pred]
-    return pred
+def remapping(t):
+    t = t.lower()
+    if t in SLOTS_REMAPPING:
+        t = SLOTS_REMAPPING[t]
+    return t
 
 
 def unpack_belief_states(belief_state, mode):

@@ -108,8 +108,10 @@ if __name__ == "__main__":
     # results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-3.5-turbo_0-end_debugFalse_singleDomainOnlyFalse_withSlotDescriptionFalse_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit4_prompt3.csv"
     #gpt3.5 multi domain - with all slots - dhall
     # results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-3.5-turbo_0-end_debugFalse_singleDomainOnlyFalse_withSlotDescriptionFalse_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit20_prompt3_latestSave.csv"
+    #gpt3.5 multi domain - with all slots - with slot desc
+    results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-3.5-turbo_0-end_debugFalse_singleDomainOnlyFalse_withSlotDescriptionTrue_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit0_prompt3.csv"
 
-    recorrect = True
+    recorrect = False
     #gpt3.5 single domain only - with all slots - recorrect
     # results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-3.5-turbo_0-end_recorrect_singleDomainOnlyTrue_withSlotDescriptionFalse_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit0_prompt3.csv"
     #gpt3.5 single domain only - with all slots - recorrect - prompt1
@@ -123,7 +125,7 @@ if __name__ == "__main__":
     #gpt4 single domain - with all slots - recorrect
     # results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-4_0-end_recorrectSlotDescFalse_debugFalse_singleDomainOnlyTrue_withSlotDescriptionFalse_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit0_prompt3.csv"
     #gpt4 single domain - with all slots - with slot description - recorrect
-    results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-4_0-end_recorrectSlotDescTrue_debugFalse_singleDomainOnlyTrue_withSlotDescriptionFalse_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit0_prompt3.csv"
+    # results_df_path = "/home/willy/instructod/src/DST/results_single/gpt-4_0-end_recorrectSlotDescTrue_debugFalse_singleDomainOnlyTrue_withSlotDescriptionFalse_withSlotDifferentiationFalse_withAllSlotsTrue_dialogHistoryLimit0_prompt3.csv"
 
     save_path = "/home/willy/instructod/src/DST/processed_results/" + results_df_path.split("/")[-1][:-4] + "_results.json"
     
