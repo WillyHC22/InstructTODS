@@ -53,14 +53,11 @@ def evaluate_dst(results_df, vocal=True, save_path=None):
         if domain == "all":
             continue
         domain_slot_f1 = results_single_domain[domain]["slot_f1"]
-        domain_correct_slots = results_single_domain[domain]["correct_slots"]
-        domain_total_slots = results_single_domain[domain]["total_slots"]
         domain_jga = results_single_domain[domain]["correct_turns_jga"]
         domain_turns = results_single_domain[domain]["turns"]
         total_single_domain_jga += domain_jga
         total_single_domain_turns += domain_turns
         results_single_domain[domain]["JGA"] = domain_jga/domain_turns
-        # results_single_domain[domain]["SLOT-F1"] = domain_correct_slots/domain_total_slots
         results_single_domain[domain]["SLOT-F1"] = domain_slot_f1/domain_turns
 
         if vocal:

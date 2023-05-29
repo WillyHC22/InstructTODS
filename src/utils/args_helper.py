@@ -30,10 +30,6 @@ class DataArguments:
         default=None,
         metadata={"help": "Train dataset path"}
     )
-    dataset_names: Optional[str] = field(
-        default=None,
-        metadata={"help": "Train dataset paths"}
-    )
     root_data_path: Optional[str] = field(
         default="./data", metadata={"help": "The path to the data directory."},
     )
@@ -66,6 +62,7 @@ class DataArguments:
         default=1000,
         metadata={"help": "Number of data rows per shard. Only used if shard_id is not None."}
     )
+    
 
 @dataclass
 class TrainingArguments(TrainingArguments):

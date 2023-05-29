@@ -209,24 +209,22 @@ class MWOZ_Dataset(PromptConstructor):
 
             metadata = turn["metadata"]
             bspn_dict = {}
-            if not metadata:
-                continue
-            for domain in metadata:
-                slot_values = metadata[domain]["semi"]
-                for slot in slot_values:
-                    value = slot_values[slot]
-                    if value and value not in ["not mentioned", "none"]:
-                        if domain in bspn_dict:
-                            bspn_dict[domain].append(remapping(slot))
-                            bspn_dict[domain].append(remapping(value))
-                        else:
-                            bspn_dict[domain] = [remapping(slot), remapping(value)]
-            bspn = " ".join([f"[{domain}] {' '.join(bspn_dict[domain])}" for domain in bspn_dict])
+            if metadata:
+                for domain in metadata:
+                    slot_values = metadata[domain]["semi"]
+                    for slot in slot_values:
+                        value = slot_values[slot]
+                        if value and value not in ["not mentioned", "none"]:
+                            if domain in bspn_dict:
+                                bspn_dict[domain].append(remapping(slot))
+                                bspn_dict[domain].append(remapping(value))
+                            else:
+                                bspn_dict[domain] = [remapping(slot), remapping(value)]
+                bspn = " ".join([f"[{domain}] {' '.join(bspn_dict[domain])}" for domain in bspn_dict])
 
             self.idx += 1
             if turn_nb % 2 == 0:
                 self.dataset["gold_turn_bs"].append(dialog_act)
-                self.dataset["gold_bs"].append(bspn)
                 self.dataset["dialogue_context"].append(dialogue_context)
                 self.dataset["gold_database_result"].append(None) 
                 self.dataset["turn"].append(turn_nb//2)
@@ -236,6 +234,7 @@ class MWOZ_Dataset(PromptConstructor):
                 self.dataset["prompt"].append(prompt)
             else:
                 self.dataset["gold_response"].append(utterance)
+                self.dataset["gold_bs"].append(bspn)
                 self.dataset["gold_act"].append(dialog_act)
 
 
@@ -252,7 +251,7 @@ class MWOZ_Dataset(PromptConstructor):
 
 if __name__ == "__main__":
     # mwoz_path = "/home/willy/InstrucTOD/MultiWOZ_2.1/"
-    mwoz_path = "/home/willy/InstrucTOD/MultiWOZ_2.1/"
+    mwoz_path = "/home/willy/instructod/MultiWOZ_2.1/"
     dialog_history_limit = 0
     single_domain_only = False
     with_slot_description = False
