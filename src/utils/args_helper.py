@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 from transformers import TrainingArguments
 
+
 @dataclass
 class ModelArguments:
     """
@@ -30,92 +31,68 @@ class DataArguments:
         default=None,
         metadata={"help": "Train dataset path"}
     )
+    dataset_names: Optional[str] = field(
+        default=None,
+        metadata={"help": "Train dataset paths"}
+    )
     root_data_path: Optional[str] = field(
         default="./data", metadata={"help": "The path to the data directory."},
     )
-    preprocessing_num_workers: Optional[int] = field(
-        default=16,
-        metadata={"help": "The number of processes to use for the preprocessing."},
+    mwoz_path: Optional[str] = field(
+        default="/home/willy/instructod/MultiWOZ_2.1/",
+        metadata={"help": "MWOZ path"}
     )
-    cache_dir: Optional[str] = field(
-        default="cache",
-        metadata={"help": "Name of cache directory."},
-    )
-    prompt_template_id: Optional[int] = field(
+    dialog_history_limit_dst: Optional[int] = field(
         default=0,
-        metadata={"help": "Prompt template ID."}
+        metadata={"help": "Lenght of dialogue history for dst"}
     )
-    max_seq_length: Optional[int] = field(
-        default=64,
-        metadata={
-            "help": (
-                "The maximum total input sequence length after tokenization. Sequences longer "
-                "than this will be truncated, sequences shorter will be padded."
-            )
-        },
+    dialog_history_limit_dst_recorrect: Optional[int] = field(
+        default=0,
+        metadata={"help": "Lenght of dialogue history for dst update"}
     )
-    shard_id: Optional[int] = field(
-        default=None,
-        metadata={"help": "Shard ID, each shard contains 1000 data. ID starts from 0."}
+    dialog_history_limit_rg: Optional[int] = field(
+        default=20,
+        metadata={"help": "Lenght of dialogue history for response generation"}
     )
-    num_rows_in_shard: Optional[int] = field(
-        default=1000,
-        metadata={"help": "Number of data rows per shard. Only used if shard_id is not None."}
+    dialog_history_limit_e2e: Optional[int] = field(
+        default=20,
+        metadata={"help": "Lenght of dialogue history for e2e"}
     )
-    
-
-@dataclass
-class TrainingArguments(TrainingArguments):
-    """
-    Arguments pertraining to the training pipeline.
-    """
-    output_dir: Optional[str] = field(
-        default="./save",
-        metadata={"help": "Output directory"},
+    single_domain_only: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Whether to keep only the single domain sample or not"}
     )
-    load_best_model_at_end: Optional[bool] = field(
+    with_slot_description: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Whether to use slot description or not for DST"}
+    )
+    with_req_inf_differentiation: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Whether to differentiate between require and inform slot for DST"}
+    )
+    with_all_slots: Optional[bool] = field(
         default=True,
-        metadata={"help": "Whether to load the best model at the end or not."}
+        metadata={"help": "Whether to use all slots or not"}
     )
-    evaluation_strategy: Optional[str] = field(
-        default="epoch",
-        metadata={"help": "Evaluation strategy."}
+    debug_mode: Optional[bool] = field(
+        default=False,
+        metadata={"help": "debug mode to only try 20 samples"}
     )
-    save_strategy: Optional[str] = field(
-        default="epoch",
-        metadata={"help": "Save strategy."}
+    start_idx: Optional[int] = field(
+        default=0,
+        metadata={"help": "Starting index to restart the prediction if needed"}
     )
-    evaluation_strategy: Optional[str] = field(
-        default="epoch",
-        metadata={"help": "Evaluation strategy."}
+    save_path: Optional[str] = field(
+        default="results/",
+        metadata={"help": "save path"}
     )
-    logging_strategy: Optional[str] = field(
-        default="epoch",
-        metadata={"help": "Logging strategy."}
+    save_every: Optional[int] = field(
+        default=5,
+        metadata={"help": "every step to save in case api fail"}
     )
-    save_steps: Optional[int] = field(
-        default=1,
-        metadata={"help": "Save steps."}
-    )
-    eval_steps: Optional[int] = field(
-        default=1,
-        metadata={"help": "Evaluation steps."}
-    )
-    logging_steps: Optional[int] = field(
-        default=1,
-        metadata={"help": "Logging steps."}
-    )
-    save_total_limit: Optional[int] = field(
-        default=1,
-        metadata={"help": "Save total limit."}
-    )
-    report_to: Optional[str] = field(
-        default="tensorboard",
-        metadata={"help": "Report to."}
-    )
-    full_determinism: Optional[bool] = field(
-        default=True,
-        metadata={"help": "Full determinism."}
+    db_format_type: Optional[str] = field(
+        default="1",
+        metadata={"help": "1 is more precise, 2 is more concise for db integration"},
     )
 
 @dataclass
@@ -126,6 +103,10 @@ class PromptingArguments(TrainingArguments):
     output_dir: Optional[str] = field(
         default="./out",
         metadata={"help": "Output directory"},
+    )
+    task: Optional[str] = field(
+        default="dst",
+        metadata={"help": "Task to perform"}
     )
     max_requests_per_minute: Optional[int] = field(
         default=20,

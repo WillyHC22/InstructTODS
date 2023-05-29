@@ -18,8 +18,7 @@ def generate(model, prompt):
     if model in ["gpt-3.5-turbo", "gpt-4"]:
         completion = openai.ChatCompletion.create(
           model=model, 
-          messages=[{"role": "system", "content": "You are a helpful assistant that interact as a Task-Oriented Dialogue System that is especially knowledgeable in doing dialogue state tracking"},
-                    {"role": "user", "content": prompt}
+          messages=[{"role": "user", "content": prompt}
                     ],
           temperature=0,
         )

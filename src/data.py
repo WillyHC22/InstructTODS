@@ -5,9 +5,9 @@ import pandas as pd
 from tqdm import tqdm
 from langchain import PromptTemplate
 
-from DST.evaluate_utils import remapping
-from DST.dst import SLOTS_DESCRIPTIONS
-from config import CONFIG
+from src.DST.evaluate_utils import remapping
+from src.DST.dst import SLOTS_DESCRIPTIONS
+from src.config import CONFIG
 
 
 class PromptConstructor():
@@ -150,7 +150,7 @@ class MWOZ_Dataset(PromptConstructor):
         print("Loading data...")
         self.all_data, self.testfiles, self.system_acts = self._get_mwoz_data(data_args.mwoz_path)
         print("Loading databases...")
-        self.dbs_lexicalized = self._get_dbs_lexicalized(data_args.mwoz_path)
+        self.dbs_lexicalized = self._get_dbs_lexicalized(data_args.mwoz_path, data_args.db_format_type)
         self.idx = 0
         self.dialog_history_limit_dst = data_args.dialog_history_limit_dst
         self.dialog_history_limit_rg = data_args.dialog_history_limit_rg
@@ -192,7 +192,7 @@ class MWOZ_Dataset(PromptConstructor):
             
         return all_data, testfiles, system_acts
     
-    def _get_dbs_lexicalized(self, mwoz_path):
+    def _get_dbs_lexicalized(self, mwoz_path, format_type):
         domains = ["restaurant", "hotel", "train", "attraction"]
         keep_data = {"restaurant":["address", "area", "food", "name", "pricerange", "phone", "postcode"],
                     "attraction":["name", "area", "address", "type", "postcode"],
@@ -205,12 +205,24 @@ class MWOZ_Dataset(PromptConstructor):
                 db_data = json.load(f)
 
             db_lexicalized = []
-            for row in db_data:
-                row_keep = []
-                for key in keep_data[domain]:
+            if format_type == "1":
+                for row in db_data:
+                    row_keep = []
+                    for key in keep_data[domain]:
                         if key in row:
                             row_keep.append(f"{key}: {row[key]}")
-                db_lexicalized.append(", ".join(row_keep))
+                    db_lexicalized.append(", ".join(row_keep))
+            
+            elif format_type == "2":
+                #more concise db to fit in context length limit
+                db_lexicalized.append(", ".join(keep_data[domain]))
+                for row in db_data:
+                    row_keep = []
+                    for key in keep_data[domain]:
+                        if key in row:
+                            row_keep.append(f"{row[key]}")
+                    db_lexicalized.append(", ".join(row_keep))
+                    # db_lexicalized.append(", ".join([f"{row[key]}" for key in keep[domain]]))
             dbs_lexicalized[domain] = "\n".join(set(db_lexicalized))
 
         return dbs_lexicalized
@@ -239,20 +251,20 @@ class MWOZ_Dataset(PromptConstructor):
             
             utterance = f"""{speaker}: {turn["text"]}\n"""
             dialog_act = turn["dialog_act"]
+            cur_system_act = self.system_acts[sample.split(".")[0]][str((turn_nb//2)+1)]
             
             dialogue_context_dst = dialog_history_dst + utterance
             prompt_dst = self._build_prompt(mode="dst",
                                             slots=slots,
                                             dialogue_context=dialogue_context_dst)
             
-            lexicalized_act = self._lexicalize_act(dialog_act)
+            lexicalized_act = self._lexicalize_act(cur_system_act)
             dialogue_context_rg = dialog_history_rg + utterance + f"ACT:{lexicalized_act}\nSYSTEM:"
             prompt_rg = self._build_prompt(mode="response_generation",
                                             dialogue_context=dialogue_context_rg)
             
             dialogue_context_e2e = dialog_history_e2e + utterance + "SYSTEM:"
-            # need to have utterance level domain here
-            cur_system_act = self.system_acts[sample.split(".")[0]][str((turn_nb//2)+1)]
+    
             turn_domain = self._get_domain_from_turn(turn_domain, cur_system_act)
             if turn_domain and turn_domain != "taxi":
                 database = self.dbs_lexicalized[turn_domain]
@@ -260,7 +272,7 @@ class MWOZ_Dataset(PromptConstructor):
                 database = ""
             prompt_e2e = self._build_prompt(mode="e2e",
                                             database=database,
-                                            dialogue_context=dialogue_context_e2e)
+                                            dialogue_context=dialogue_context_e2e).replace("\n\n\n", "\n")
 
             dialog_history_dst, dialog_history_memory_dst = self._update_dialogue_memory(utterance, 
                                                                                          dialogue_log, 
@@ -321,6 +333,9 @@ class MWOZ_Dataset(PromptConstructor):
         return dialog_history, dialog_history_memory
     
     def _lexicalize_act(self, act):
+        if act == "No Annotation":
+            return "None"
+        
         lexicalized_acts = []
         lexicalize_mapping = {"leave": "leave time",
                               "arrive":"arrival time",
