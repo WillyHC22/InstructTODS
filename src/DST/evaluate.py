@@ -35,14 +35,6 @@ def evaluate_dst(results_df, vocal=True, save_path=None):
         if len(domains) == 1:
             results_single_domain[domains[0]]["slot_f1"] += F1
             results_single_domain[domains[0]]["turns"] += 1
-        # if len(domains) == 1:
-        #     gold_values = [gold.split("-")[1] for gold in unpacked_gold]
-        #     pred_values = [pred.split("-")[1] for pred in unpacked_pred]
-        #     for gold_value in gold_values:
-        #         if gold_value in pred_values:
-        #             results_single_domain[domains[0]]["correct_slots"] += 1
-        #         results_single_domain[domains[0]]["total_slots"] += 1
-        #     results_single_domain[domains[0]]["turns"] += 1
         results_single_domain["all"]["global_f1"] += F1
         results_single_domain["all"]["global_turns"] += 1
         global_turns += 1

@@ -4,6 +4,8 @@ results/
 src/DST/results_single_old/
 src/DST/results_single/
 src/DST/processed_results/
+src/e2e/results/
+src/RG/results/
 
 
 # Byte-compiled / optimized / DLL files
