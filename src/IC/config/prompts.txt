@@ -1,0 +1,4 @@
+Given the following list of INTENTS, do intent classification on the sentence provided as SENTENCE, just generate the intent and nothing more:\n\nINTENTS:\n{INTENTS}\nSENTENCE:
+Given the following list of INTENTS, do intent classification on the sentence provided as SENTENCE and just generate the 3 most likely intent and nothing more:\nINTENTS:\n{INTENTS}\nSENTENCE:
+Select the correct intent that is expressed in the given SENTENCE among the list of INTENTS provided. Generate the correct intent and nothing more:\nINTENTS:\n{INTENTS}\nSENTENCE:
+Choose the top 3 most correct intent that is expressed in given SENTENCE among the list of INTENTS provided. Generate the top 3 most likely intent and nothing more:\nINTENTS:\n{INTENTS}\nSENTENCE:
