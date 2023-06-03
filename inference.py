@@ -111,7 +111,7 @@ def main():
             temp_save_path = data_args.save_path[:-4] + "_latestSave.csv"
             temp_df = pd.DataFrame({"id":idxs,
                                     "prompts":prompts,
-                                    "gold_response":gold_response,
+                                    "gold_response":gold_responses,
                                     "preds":preds})
             temp_df.to_csv(temp_save_path)
 
