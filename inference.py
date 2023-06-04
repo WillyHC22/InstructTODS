@@ -56,12 +56,13 @@ def main():
     openai.api_key= CONFIG["openai_api_key"]
 
     def completion(model_args, prompt):
-        if "gpt-3.5-turbo" in model_args.model_name_or_path:
+        if "gpt-3.5-turbo" in model_args.model_name_or_path or "gpt-4" in model_args.model_name_or_path:
             completion = openai.ChatCompletion.create(
                 model=model_args.model_name_or_path.replace("openai/", ""),
                 messages=[
                     {"role": "user", "content": prompt}
-                ]
+                ],
+                temperature=0
             )
             response = completion.choices[0].message.content.strip()
         else:

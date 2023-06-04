@@ -94,6 +94,10 @@ class DataArguments:
         default="1",
         metadata={"help": "1 is more precise, 2 is more concise for db integration"},
     )
+    load_path: Optional[str] = field(
+        default="results/",
+        metadata={"help": "load path"}
+    )
 
 @dataclass
 class PromptingArguments(TrainingArguments):

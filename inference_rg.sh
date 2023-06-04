@@ -1,6 +1,5 @@
 python inference.py \
-    --model_name_or_path "openai/gpt-3.5-turbo" \
+    --model_name_or_path "openai/gpt-4" \
     --task "rg" \
-    --save_path "/home/willy/instructod/src/RG/results/gpt-3.5-turbo_rg_5911_end_output.csv" \
-    --dialog_history_limit_rg -1 \
-    --start_idx 5911 \
+    --save_path "/home/willy/instructod/src/RG/results/gpt-4_rg_full_output.csv" \
+    --dialog_history_limit_rg -1

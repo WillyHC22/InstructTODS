@@ -11,13 +11,16 @@ from utils import get_label_intent_dict, get_labels, get_prompts, get_intents, c
 openai.api_key= os.environ["OPENAI_API_KEY"]
 
 
-def do_inference(test_data, label2intent, model, ALL_PROMPTS, save_path=None, start_from=0, save_steps=100, topn="top3"):
+def do_inference(test_data, label2intent, model, ALL_PROMPTS, save_path=None, start_from=0, save_steps=100, topn="top3", debug_mode=False):
     preds = {}
-    L = len(test_data)
+    total_tokens = 0
+    if debug_mode:
+        L = 10
+    else:
+        L = len(test_data)
     
     for i in tqdm(range(start_from, L)):
         cur_preds = {}
-        print(test_data)
         text_input = test_data[i]
         prompt = ALL_PROMPTS[topn] + '"' + text_input["text"] + '"'
 
@@ -27,13 +30,20 @@ def do_inference(test_data, label2intent, model, ALL_PROMPTS, save_path=None, st
         cur_preds["prompt"] = prompt
 
         def completion(model, prompt):
-            completion = openai.ChatCompletion.create(
-                model=model, 
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0
-            )
-            print(completion)
-            return completion["choices"][0]["message"]["content"]
+            if model in ["gpt-3.5-turbo", "gpt-4"]:
+                completion = openai.ChatCompletion.create(
+                    model=model, 
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0
+                )
+                return completion["choices"][0]["message"]["content"], completion["usage"]["total_tokens"]
+            else:
+                completion = openai.Completion.create(
+                    model=model,
+                    prompt=prompt,
+                    temperature=0
+                    )
+                return completion["choices"][0]["text"], 0
         
         retry_count = 0
         while True:
@@ -41,7 +51,8 @@ def do_inference(test_data, label2intent, model, ALL_PROMPTS, save_path=None, st
                 print("Retried too many times")
                 break
             try:
-                cur_preds["pred"] = completion(model, prompt)
+                cur_preds["pred"], tokens = completion(model, prompt)
+                total_tokens += tokens
                 break
             except:
                 retry_count += 1
@@ -57,59 +68,109 @@ def do_inference(test_data, label2intent, model, ALL_PROMPTS, save_path=None, st
     if save_path:
         with open(save_path, "w") as f:
             json.dump(preds, f, indent=4)
-            
+
+    print(f"Used in total {total_tokens} for the inference with {model}")
+
     return preds
 
 
-def do_postprocessing(load_path, save_path, correction_path):
+def do_postprocessing(load_path, save_path, correction_path, dataset, args_topn, model):
     with open(load_path, "r") as f:
         results = json.load(f)
         
     full_results = results.copy()
     count = 0
-    test_results = {}
     for index, result in results.items():
         topn = 1
         temp_results = {}
         pred = result["pred"].lower()
-        pred = pred.replace("\n", " ")
+        pred = correcting_phrasing(pred, correction_path)
         pred = pred.replace(",", " ")
         pred = pred.replace(".", " ")
         pred = pred.replace(":", " ")
         pred = pred.replace(")", " ")
-        pred = correcting_phrasing(pred, correction_path)
-        if "_" in pred:
-            pred = pred.split(" ")
-            for word in pred:
-                if "_" in word or word == "none":
-                    temp_results["top"+str(topn)] = word
-                    topn += 1
-            if len(temp_results) != 3:
-                count += 1
-                print(f"""Predictions at index {index}: "{" ".join(pred)}" formatting isn't handled correctly\n""")
+        if "clinc" in dataset:
+            if "3" in args_topn:
+                # splitted_preds = [(idx+1, pred.split(" ")[1]) for idx, pred in enumerate(pred.split("\n"))]
+                # for topn in splitted_preds:
+                #     temp_results["top" + str(topn[0])] = topn[1]
+                pred = pred.replace("\n", " ")
+                pred = pred.split(" ")
+                if pred[-1] == "":
+                    pred = pred[:-1]
+                full_intent = ""
+                for word in pred:
+                    # if word not in ["", "1", "2", "3"]:
+                    if not word.isdigit() and word != "":
+                        full_intent += word + "_"
+                    else:
+                        temp_results["top"+str(topn)] = full_intent[:-1]
+                        if full_intent != "":
+                            topn += 1
+                        full_intent = ""
+                temp_results["top"+str(topn)] = full_intent[:-1]
+                temp_results = {k:v for k, v in temp_results.items() if k in ["top1", "top2", "top3"]}
 
-        else:
-            pred = pred.split(" ")
-            if pred[-1] == "":
-                pred = pred[:-1]
-            full_intent = ""
-            for word in pred:
-                if word not in ["", "1", "2", "3"]:
-                    full_intent += word + "_"
-                else:
-                    temp_results["top"+str(topn)] = full_intent[:-1]
-                    if full_intent != "":
+                L = len(temp_results)
+                if L < 3:
+                    print(f"""Predictions at index {index}: "{" ".join(pred)}" formatting isn't handled correctly\n""")
+                    count += 1
+                    for topn in ["top1", "top2", "top3"]:
+                        if topn not in temp_results:
+                            temp_results[topn] = "none"
+
+            else:
+                pred = pred.replace("\n", " ")
+                if "3.5" in model:
+                    if ":" in pred:
+                        temp_results["top1"] = pred.split(": ")[1]
+                    else:
+                        temp_results["top1"] = pred
+                elif "4" in model:
+                    parsed_pred = pred.split(" ")
+                    if parsed_pred[0].isdigit():
+                        temp_results["top1"] = parsed_pred[1]
+                    else:
+                        temp_results["top1"] = parsed_pred[0]
+
+        else:    
+            pred = pred.replace("\n", " ")
+            pred = correcting_phrasing(pred, correction_path)
+            if "_" in pred:
+                pred = pred.split(" ")
+                for word in pred:
+                    if "_" in word or word == "none":
+                        temp_results["top"+str(topn)] = word
                         topn += 1
-                    full_intent = ""
-            temp_results["top"+str(topn)] = full_intent[:-1]
+                if len(temp_results) != 3:
+                    count += 1
 
-            if len(temp_results) != 3:
-                count += 1
-                print(f"""Predictions at index {index}: "{" ".join(pred)}" formatting isn't handled correctly\n""")
-                temp_results = {"top1":"none", "top2":"none", "top3":"none"}
-        
+            else:
+                pred = pred.split(" ")
+                if pred[-1] == "":
+                    pred = pred[:-1]
+                full_intent = ""
+                for word in pred:
+                    if word not in ["", "1", "2", "3"]:
+                        full_intent += word + "_"
+                    else:
+                        temp_results["top"+str(topn)] = full_intent[:-1]
+                        if full_intent != "":
+                            topn += 1
+                        full_intent = ""
+                temp_results["top"+str(topn)] = full_intent[:-1]
+                temp_results = {k:v for k, v in temp_results.items() if k in ["top1", "top2", "top3"]}
+
+                L = len(temp_results)
+                if L < 3:
+                    count += 1
+                    for topn in ["top1", "top2", "top3"]:
+                        if topn not in temp_results:
+                            temp_results[topn] = "none"
+
         full_results[index]["processed_pred"] = temp_results
-        
+    
+    
     with open(save_path, "w") as f:
         json.dump(full_results, f, indent=4)
     
@@ -168,16 +229,21 @@ if __name__ == "__main__":
     parser.add_argument("--save_path_postprocess", type=str, default="/home/willy/instructod/src/IC/results/full_banking77_top3_processed.json", help="path to save json after postprocessing for top 3 intents")
     parser.add_argument("--save_path_eval", type=str, default="/home/willy/instructod/src/IC/results/full_banking77_top3_processed_eval.json", help="path to save json after evaluation of postprocessed results")
     parser.add_argument("--eval_file", type=str, default="/home/willy/instructod/src/IC/results/full_banking77_top3_processed.json", help="file to run evaluation from postprocessing")
+    parser.add_argument("--debug_mode", action="store_true", help="debug mode")
     args = parser.parse_args()
   
     
     if args.do_inference:
-        dataset = load_dataset(args.dataset, split=args.split)
+        if "clinc" in args.dataset:
+            dataset = load_dataset(args.dataset, "small", split=args.split)
+            dataset = dataset.rename_column('intent', 'label')
+        else:
+            dataset = load_dataset(args.dataset, split=args.split)
         LABELS = get_labels(args.label_path)
         label2intent, intent2label = get_label_intent_dict(LABELS)
         INTENTS = get_intents(label2intent)
-        ALL_PROMPTS = get_prompts(args.prompt_path, INTENTS)
-        
+        ALL_PROMPTS = get_prompts(args.prompt_path, INTENTS)    
+
         preds = do_inference(dataset, 
                              label2intent, 
                              model=args.model,
@@ -185,12 +251,16 @@ if __name__ == "__main__":
                              ALL_PROMPTS=ALL_PROMPTS, 
                              start_from=args.start_from, 
                              save_steps=args.save_steps, 
-                             topn=args.topn)
+                             topn=args.topn,
+                             debug_mode=args.debug_mode)
         
     if args.do_postprocessing:
         preds = do_postprocessing(load_path=args.load_path, 
                                   save_path=args.save_path_postprocess, 
-                                  correction_path=args.corrections_path)
+                                  correction_path=args.corrections_path,
+                                  dataset=args.dataset,
+                                  args_topn=args.topn,
+                                  model=args.model)
     
     if args.do_evaluation:
         results = do_evaluation(load_path=args.eval_file,
