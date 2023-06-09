@@ -12,6 +12,10 @@ class ModelArguments:
         default=None,
         metadata={"help": "The path of the HuggingFace model."}
     )
+    model_name_or_path_agent: Optional[str] = field(
+        default=None,
+        metadata={"help": "The path of the HuggingFace model for the agent"}
+    )
     use_int8: Optional[bool] = field(
         default=False,
         metadata={"help": "Whether to use int8 model or not."}
@@ -20,6 +24,7 @@ class ModelArguments:
         default=False,
         metadata={"help": "Whether to use deepspeed model or not."}
     )
+    
     
 
 @dataclass
@@ -98,6 +103,18 @@ class DataArguments:
         default="results/",
         metadata={"help": "load path"}
     )
+    agent_max_iterations: Optional[int] = field(
+        default=5,
+        metadata={"help": "Max number of iterations for agents in e2e (higher=better but more expensive)"}
+    )
+    verbose: Optional[bool] = field(
+        default=False,
+        metadata={"help": "verbosity for agent call in database retrieval"}
+    )
+    do_inference: Optional[bool] = field(
+        default=False,
+        metadata={"help": "use to do inference with the e2e agent setting"}
+    )
 
 @dataclass
 class PromptingArguments(TrainingArguments):
@@ -110,13 +127,11 @@ class PromptingArguments(TrainingArguments):
     )
     task: Optional[str] = field(
         default="dst",
-        metadata={"help": "Task to perform"}
+        metadata={"help": "Task to perform - 'dst', 'rg', 'e2e', 'ic'."}
     )
     max_requests_per_minute: Optional[int] = field(
         default=20,
         metadata={"help": "Max number of requests for OpenAI API."}
     )
-    openai_api_key_name: Optional[str] = field(
-        default="OPENAI_API_KEY",
-        metadata={"help": "OpenAI API key name."}
-    )
+
+     
