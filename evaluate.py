@@ -16,7 +16,7 @@ from transformers import (
 from src.config import CONFIG
 from src.data import MWOZ_Dataset
 from src.DST.dst import SLOTS_DESCRIPTIONS
-from src.DST.evaluate_utils import remapping
+from src.DST.evaluate_utils import remapping, add_running_accumulated_bs_column, full_fix, compute_dst_prf
 from src.utils.args_helper import DataArguments, ModelArguments, PromptingArguments
 from src.RG.rg_utils import compute_BLEU, add_delexicalize_response, compute_match_succes, process_baseline
 
@@ -50,12 +50,13 @@ def main():
 
     # mwoz = MWOZ_Dataset(CONFIG, data_args)
     # dataset = mwoz.dataset
-    if "baseline" in data_args.load_path:
-        df_results = json.load(open(data_args.load_path, "r"))
-    else:
-        df_results = pd.read_csv(data_args.load_path)
-        df_results = df_results.dropna(subset=['preds'])
+
     if prompting_args.task == "rg":
+        if "baseline" in data_args.load_path:
+            df_results = json.load(open(data_args.load_path, "r"))
+        else:
+            df_results = pd.read_csv(data_args.load_path)
+            df_results = df_results.dropna(subset=['preds'])
         print("======= Evaluating response generation =======")
         print("Delexicalizing the response generation...")
         if "baseline" in data_args.load_path:
@@ -74,14 +75,34 @@ def main():
         total_results["BLEU"] = bleu
         total_results["BLEU-4"] = bleu_4
 
+    elif prompting_args.task == "dst":
+        mwoz = MWOZ_Dataset(CONFIG, data_args)
+        dataset = mwoz.dataset
+        # df_results = pd.read_csv("/home/willy/instructod/src/DST/results_single/gpt-3.5-turbo_0-end_singleDomainOnlyTrue_withSlotDescriptionFalse_withSlotDifferentiationFalse_dialogHistoryLimit0_prompt3.csv")
+        df_results = pd.read_csv(data_args.load_path)
+        df_results = df_results.rename(columns={'gold_bs':'gold_turn_bs'})
+        # df_results = df_results.merge(dataset[['id', 'turn_domain', 'gold_bs']], on='id', how='left')
+        # df_results = dataset.merge(df_results[['id', 'preds']], on='id', how='right')
+        df_results = dataset.merge(df_results[['id', 'correct_preds']], on='id', how='right')
+        df_results = df_results.rename(columns={"correct_preds":"preds"})
+
+        print("Processing belief states...")
+        add_running_accumulated_bs_column(df_results, mode = 'preds')
+        add_running_accumulated_bs_column(df_results, mode = 'golds', new_column_suffix='_new')
+
+        print("Evaluating metrics...")
+        total_results = compute_dst_prf(df_results)
+
+
+
     print("Saving results...")
     if data_args.save_path:
         with open(data_args.save_path, "w") as f:
             json.dump(total_results, f, indent=4)
 
-    print(f"Results are:")
-    for k, v in total_results.items():
-        print(f"{k}: {v*100:.2f}")
+    # print(f"Results are:")
+    # for k, v in total_results.items():
+    #     print(f"{k}: {v*100:.2f}")
 
     return total_results
 

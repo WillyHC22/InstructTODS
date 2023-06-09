@@ -16,6 +16,7 @@ from transformers import (
 )
 
 from src.config import CONFIG
+from src.e2e.e2e_utils import E2E_InstrucTOD
 from src.data import MWOZ_Dataset
 from src.utils.args_helper import DataArguments, ModelArguments, PromptingArguments
 
@@ -74,51 +75,65 @@ def main():
         return response
     
     if data_args.debug_mode:
-        dataset = dataset[:10]
+        dataset = dataset[9:15]
     else:
         dataset = dataset[data_args.start_idx:]
-    outputs = dataset.copy(deep=True)
-    preds = []
-    prompts = []
-    gold_responses = []
-    idxs = []
-    for idx, row in tqdm(dataset.iterrows()):
-        if prompting_args.task == "rg":
-            prompt = row["prompt_rg"]
-            gold_response = row["gold_response"]
-        elif prompting_args.task == "e2e":
-            prompt = row["prompt_e2e"]
-            gold_response = row["gold_response"]
-        sample_id = row["id"]
-        retry_count = 0
-        while True:
+        
+    if prompting_args.task == "e2e_instructod":
+        instructod = E2E_InstrucTOD(CONFIG,
+                                    model_args,
+                                    data_args,
+                                    dataset)
+        if data_args.do_inference:
+            preds = instructod.inference()
+        
+    
+    else:
+        outputs = dataset.copy(deep=True)
+        preds = []
+        prompts = []
+        gold_responses = []
+        idxs = []
+        for idx, row in tqdm(dataset.iterrows()):
+
+            if prompting_args.task == "rg":
+                prompt = row["prompt_rg"]
+                gold_response = row["gold_response"]
+
+            elif prompting_args.task == "e2e":
+                prompt = row["prompt_e2e"]
+                gold_response = row["gold_response"]
+
+            sample_id = row["id"]
+            retry_count = 0
+            while True:
+                if retry_count > 5:
+                    print("Retried too many times")
+                    break
+                try:
+                    pred = completion(model_args, prompt)
+                    break
+                except:
+                    retry_count += 1
             if retry_count > 5:
-                print("Retried too many times")
                 break
-            try:
-                pred = completion(model_args, prompt)
-                break
-            except:
-                retry_count += 1
-        if retry_count > 5:
-            break
 
-        preds.append(pred)
-        gold_responses.append(gold_response)
-        idxs.append(sample_id)
-        prompts.append(prompt)
+            preds.append(pred)
+            gold_responses.append(gold_response)
+            idxs.append(sample_id)
+            prompts.append(prompt)
 
-        if idx % data_args.save_every == 0:
-            temp_save_path = data_args.save_path[:-4] + "_latestSave.csv"
-            temp_df = pd.DataFrame({"id":idxs,
-                                    "prompts":prompts,
-                                    "gold_response":gold_responses,
-                                    "preds":preds})
-            temp_df.to_csv(temp_save_path)
+            if idx % data_args.save_every == 0:
+                temp_save_path = data_args.save_path[:-4] + "_latestSave.csv"
+                temp_df = pd.DataFrame({"id":idxs,
+                                        "prompts":prompts,
+                                        "gold_response":gold_responses,
+                                        "preds":preds})
+                temp_df.to_csv(temp_save_path)
 
-    outputs["preds"] = preds
-    df = pd.DataFrame(outputs)
-    df.to_csv(data_args.save_path)
+        outputs["preds"] = preds
+        df = pd.DataFrame(outputs)
+        df.to_csv(data_args.save_path)
         
         
 if __name__ == "__main__":
