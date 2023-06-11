@@ -288,20 +288,26 @@ class MWOZ_Dataset(PromptConstructor):
                                                                                          dialog_history_memory_e2e) 
                 
             metadata = turn["metadata"]
-            bspn_dict = {}
+            # bspn_dict = {}
+            # if metadata:
+            #     for domain in metadata:
+            #         slot_values = metadata[domain]["semi"]
+            #         for slot in slot_values:
+            #             value = slot_values[slot]
+            #             if value and value not in ["not mentioned", "none"]:
+            #                 if domain in bspn_dict:
+            #                     bspn_dict[domain].append(remapping(slot))
+            #                     bspn_dict[domain].append(remapping(value))
+            #                 else:
+            #                     bspn_dict[domain] = [remapping(slot), remapping(value)]
+            #     bspn = " ".join([f"[{domain}] {' '.join(bspn_dict[domain])}" for domain in bspn_dict])
+            bspn = {}
             if metadata:
-                for domain in metadata:
-                    slot_values = metadata[domain]["semi"]
-                    for slot in slot_values:
-                        value = slot_values[slot]
-                        if value and value not in ["not mentioned", "none"]:
-                            if domain in bspn_dict:
-                                bspn_dict[domain].append(remapping(slot))
-                                bspn_dict[domain].append(remapping(value))
-                            else:
-                                bspn_dict[domain] = [remapping(slot), remapping(value)]
-                bspn = " ".join([f"[{domain}] {' '.join(bspn_dict[domain])}" for domain in bspn_dict])
-
+                for domain in domains:
+                    for k, v in metadata[domain].items():
+                        for slot, value in v.items():
+                            if isinstance(value, str) and value not in ["", "not mentioned", "none"]:
+                                bspn[domain+"-"+slot] = value
             self.idx += 1
             if turn_nb % 2 == 0:
                 self.dataset["gold_turn_bs"].append(dialog_act)
