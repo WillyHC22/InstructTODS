@@ -17,58 +17,94 @@ class PromptConstructor():
         self.instructions = config["INSTRUCTIONS"]
         self.prompt_templates = config["PROMPT_TEMPLATES"]
         
-    def _get_slots_from_domains(self, domains, with_slot_description, with_req_inf_differentiation, with_all_slots):
-        # slot_description = self.config["slot_descrpition"]
+    def _get_slots_from_domains(self, domains, ontology, with_slot_description, with_all_slots, with_slot_domain_diff):
+        
         if with_all_slots:
-            domains = "all"
+            domains = ["restaurant", "train", "attraction", "hotel", "taxi"]
         
+        slots = []
+        for slot in list(ontology.keys()):
+            splitted_slot = slot.split("-")
+            if splitted_slot[0] in domains:
+                if with_slot_domain_diff:
+                    if splitted_slot[-1] not in slots:
+                        slots.append(splitted_slot[-1])
+                else:
+                    slots.append(splitted_slot[0] + "-" + splitted_slot[-1])
+        
+        slots_info = []
+        added_slots = []
         if with_slot_description:
-            with_req_inf_differentiation = False #Slot description is the discriminator
-
-        if domains == "all":
-            if with_req_inf_differentiation:
-                req_slots = ", ".join(self.config["multiwoz21"]["all_requestable_slots"])
-                inf_slots = ", ".join(self.config["multiwoz21"]["all_informable_slots"])
-            else:
-                slots = set(self.config["multiwoz21"]["all_requestable_slots"] + 
-                            self.config["multiwoz21"]["all_informable_slots"])
-                slots = ", ".join(slots)
-        elif not isinstance(domains, list):
-            raise ValueError("""Provided domain should be either 'all' or list of valid domain names:
-                                - for multiwoz2.1 and 2.4: taxi, restaurant, hotel, train, attraction 
-                                - for SGD: To-do""")
-        else:
-            req_slots = ""
-            inf_slots = ""
-            domain_req_slots = []
-            domain_inf_slots = []
-            for domain in domains:
-                domain_req_slots += self.config["multiwoz21"]["requestable_slots"][domain]
-                domain_inf_slots += self.config["multiwoz21"]["informable_slots"][domain]
-            if with_req_inf_differentiation:
-                domain_req_slots = set(domain_req_slots)
-                domain_inf_slots = set(domain_inf_slots)
-                req_slots += ", ".join(domain_req_slots)
-                inf_slots += ", ".join(domain_inf_slots)
-            else:
-                slots = set(domain_req_slots + domain_inf_slots)
-                slots = ", ".join(slots)
-
-        if with_req_inf_differentiation:
-            slots_info = f"Requestable slots: {req_slots}\nInformable slots: {inf_slots}"
-        else:
-            slots_info = f"{slots}"
-
-        if with_slot_description:
-            slots = slots.split(", ")
-            slots_info = ""
             for slot in slots:
-                if slot not in self.config["multiwoz21"]["all_informable_slots"]:
-                    continue
-                slots_info += f"name: {slot}, description: {SLOTS_DESCRIPTIONS[slot]}\n"
-            slots_info = slots_info[:-2]
+                splitted_slot = slot.split("-")
+                if with_slot_domain_diff:
+                    if slot in added_slots:
+                        continue
+                    slots_info.append(f"name: {slot}, description: {SLOTS_DESCRIPTIONS[slot.lower()]}")
+                    added_slots.append(slot)
+                else:
+                    slots_info.append(f"name: {slot}, description: {SLOTS_DESCRIPTIONS[splitted_slot[1].lower()]}")
+
+                    
+            slots = slots_info
         
-        return slots_info
+        slots_prompt = "\n".join(slots)
+        if with_slot_domain_diff:
+            return slots_prompt + f"\n\nDOMAINS: {', '.join(domains)}"
+        else:
+            return slots_prompt
+            
+                
+                
+#         if with_all_slots:
+#             domains = "all"
+        
+#         if with_slot_description:
+#             with_req_inf_differentiation = False #Slot description is the discriminator
+
+#         if domains == "all":
+#             if with_req_inf_differentiation:
+#                 req_slots = ", ".join(self.config["multiwoz21"]["all_requestable_slots"])
+#                 inf_slots = ", ".join(self.config["multiwoz21"]["all_informable_slots"])
+#             else:
+#                 slots = set(self.config["multiwoz21"]["all_requestable_slots"] + 
+#                             self.config["multiwoz21"]["all_informable_slots"])
+#                 slots = ", ".join(slots)
+#         elif not isinstance(domains, list):
+#             raise ValueError("""Provided domain should be either 'all' or list of valid domain names:
+#                                 - for multiwoz2.1 and 2.4: taxi, restaurant, hotel, train, attraction""")
+#         else:
+#             req_slots = ""
+#             inf_slots = ""
+#             domain_req_slots = []
+#             domain_inf_slots = []
+#             for domain in domains:
+#                 domain_req_slots += self.config["multiwoz21"]["requestable_slots"][domain]
+#                 domain_inf_slots += self.config["multiwoz21"]["informable_slots"][domain]
+#             if with_req_inf_differentiation:
+#                 domain_req_slots = set(domain_req_slots)
+#                 domain_inf_slots = set(domain_inf_slots)
+#                 req_slots += ", ".join(domain_req_slots)
+#                 inf_slots += ", ".join(domain_inf_slots)
+#             else:
+#                 slots = set(domain_req_slots + domain_inf_slots)
+#                 slots = ", ".join(slots)
+
+#         if with_req_inf_differentiation:
+#             slots_info = f"Requestable slots: {req_slots}\nInformable slots: {inf_slots}"
+#         else:
+#             slots_info = f"{slots}"
+
+#         if with_slot_description:
+#             slots = slots.split(", ")
+#             slots_info = ""
+#             for slot in slots:
+#                 if slot not in self.config["multiwoz21"]["all_informable_slots"]:
+#                     continue
+#                 slots_info += f"name: {slot}, description: {SLOTS_DESCRIPTIONS[slot]}\n"
+#             slots_info = slots_info[:-2]
+        
+#         return slots_info
     
     
     def _build_prompt(self, mode="", dialogue_context="", ontology="", slots="", dialogue_acts="", belief_states="", database=""):
@@ -148,7 +184,7 @@ class MWOZ_Dataset(PromptConstructor):
                         }
         
         print("Loading data...")
-        self.all_data, self.testfiles, self.system_acts = self._get_mwoz_data(data_args.mwoz_path)
+        self.all_data, self.testfiles, self.system_acts, self.ontology = self._get_mwoz_data(data_args.mwoz_path)
         print("Loading databases...")
         self.dbs_lexicalized = self._get_dbs_lexicalized(data_args.mwoz_path, data_args.db_format_type)
         self.idx = 0
@@ -157,7 +193,7 @@ class MWOZ_Dataset(PromptConstructor):
         self.dialog_history_limit_e2e = data_args.dialog_history_limit_e2e
         self.single_domain_only = data_args.single_domain_only
         self.with_slot_description = data_args.with_slot_description
-        self.with_req_inf_differentiation = data_args.with_req_inf_differentiation
+        self.with_slot_domain_diff = data_args.with_slot_domain_diff
         self.with_all_slots = data_args.with_all_slots
         self.all_domains = ["restaurant", "taxi", "hotel", "train", "attraction"]
 
@@ -179,6 +215,7 @@ class MWOZ_Dataset(PromptConstructor):
         data_path = os.path.join(mwoz_path, "data.json")
         testListFile_path = os.path.join(mwoz_path, "testListFile.txt")
         system_acts_path = os.path.join(mwoz_path, "system_acts.json")
+        ontology_path = os.path.join(mwoz_path, "ontology.json")
 
         with open(data_path, "r") as f:
             all_data = json.load(f)
@@ -190,7 +227,10 @@ class MWOZ_Dataset(PromptConstructor):
         with open(system_acts_path, "r") as f:
             system_acts = json.load(f)
             
-        return all_data, testfiles, system_acts
+        with open(ontology_path, "r") as f:
+            ontology = json.load(f)
+            
+        return all_data, testfiles, system_acts, ontology
     
     def _get_dbs_lexicalized(self, mwoz_path, format_type):
         domains = ["restaurant", "hotel", "train", "attraction"]
@@ -237,10 +277,11 @@ class MWOZ_Dataset(PromptConstructor):
         dialog_history_e2e = ""
         turn_domain = ""
         domains = self._get_domains_from_log(dialogue_log)
-        slots = self._get_slots_from_domains(domains, 
-                                             self.with_slot_description,
-                                             self.with_req_inf_differentiation,
-                                             self.with_all_slots) # or all
+        slots = self._get_slots_from_domains(domains=domains, 
+                                             ontology=self.ontology,
+                                             with_slot_description=self.with_slot_description,
+                                             with_slot_domain_diff=self.with_slot_domain_diff,
+                                             with_all_slots=self.with_all_slots) # or all
 
         for turn_nb, turn in enumerate(dialogue_log):
 
@@ -288,19 +329,6 @@ class MWOZ_Dataset(PromptConstructor):
                                                                                          dialog_history_memory_e2e) 
                 
             metadata = turn["metadata"]
-            # bspn_dict = {}
-            # if metadata:
-            #     for domain in metadata:
-            #         slot_values = metadata[domain]["semi"]
-            #         for slot in slot_values:
-            #             value = slot_values[slot]
-            #             if value and value not in ["not mentioned", "none"]:
-            #                 if domain in bspn_dict:
-            #                     bspn_dict[domain].append(remapping(slot))
-            #                     bspn_dict[domain].append(remapping(value))
-            #                 else:
-            #                     bspn_dict[domain] = [remapping(slot), remapping(value)]
-            #     bspn = " ".join([f"[{domain}] {' '.join(bspn_dict[domain])}" for domain in bspn_dict])
             bspn = {}
             if metadata:
                 for domain in domains:

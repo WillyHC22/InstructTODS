@@ -5,6 +5,7 @@ src/DST/results_single_old/
 src/DST/results_single/
 src/DST/processed_results/
 src/DST/final_results/
+src/DST/correct_results/
 src/e2e/results/
 src/RG/results/
 src/IC/dataset/

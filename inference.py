@@ -75,7 +75,7 @@ def main():
         return response
     
     if data_args.debug_mode:
-        dataset = dataset[9:15]
+        dataset = dataset[0:9]
     else:
         dataset = dataset[data_args.start_idx:]
         
@@ -103,6 +103,10 @@ def main():
             elif prompting_args.task == "e2e":
                 prompt = row["prompt_e2e"]
                 gold_response = row["gold_response"]
+                
+            elif prompting_args.task == "dst":
+                prompt = row["prompt_dst"]
+                gold_response = row["gold_bs"]
 
             sample_id = row["id"]
             retry_count = 0

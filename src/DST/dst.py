@@ -64,7 +64,7 @@ SLOTS_DESCRIPTIONS = {
     "type":"type of hotel building or attraction",
     "day":"day of the week for the booking or departure",
     "people":"number of people for booking",
-    "area":"cardinal location of place of interest",
+    "area":"cardinal location of the place of interest like north, center, west, etc...",
     "stars":"star rating of the place",
     "name":"name of the place",
     "leaveat":"leaving time",

@@ -71,9 +71,9 @@ class DataArguments:
         default=False,
         metadata={"help": "Whether to use slot description or not for DST"}
     )
-    with_req_inf_differentiation: Optional[bool] = field(
+    with_slot_domain_diff: Optional[bool] = field(
         default=False,
-        metadata={"help": "Whether to differentiate between require and inform slot for DST"}
+        metadata={"help": "differentiation between slot and domain"}
     )
     with_all_slots: Optional[bool] = field(
         default=True,
