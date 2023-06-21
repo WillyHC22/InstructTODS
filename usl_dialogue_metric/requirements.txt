@@ -1,0 +1,7 @@
+nltk==3.5
+numpy==1.19.2
+pytorch-lightning==0.7.6
+tensorboard==2.3.0
+torch==1.2.0
+tqdm==4.50.2
+transformers==2.11.0
