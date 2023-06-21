@@ -3,42 +3,14 @@ import ast
 import json
 import copy
 import string
+import numpy as np
 import regex as re
 import pandas as pd
-from src.DST.dst import GENERAL_TYPO, SLOTS_REMAPPING, SLOTS_REVERSE_REMAPPING
+from src.DST.dst import GENERAL_TYPO, SLOTS_REMAPPING, SLOTS_REVERSE_REMAPPING, VALUES_FIX
 
-
-# SLOTS_REMAPPING = {
-#         # slots
-#         "address":"addr",
-#         "postcode":"post",
-#         "leaveat":"leave",
-#         "arriveby":"arrive",
-#         "pricerange":"price",
-#         "price":"fee",
-#         "reference":"ref",
-#         "departure":"depart",
-#         "destination":"dest",
-#         # values
-#         "not mentioned": "null",
-#         "unknown":"?", "inform":"?", "unk":"?", "needed":"?", "available":"?", "requested":"?", "request":"?", "n/a":"?",
-# }
 
 def fix_typos(pred):
-
-    # pred = pred.replace("catherine 's", "catherine's")
-    # pred = pred.replace("john 's", 'john"s')
-    # pred = pred.replace("rosa 's", 'rosa"s')
-    # pred = pred.replace("mary 's", 'mary"s')
-    # pred = pred.replace("christ 's", "christ's")
-    # pred = pred.replace("alpha - milton", "alpha-milton")
-    # pred = pred.replace("michaelhouse cafe", "mic")
-    # pred = pred.replace("the ", "")
-    # pred = pred.replace(" nights", "")  
-    # pred = pred.replace(" person", "")
-    # pred = pred.replace(" night", "")   
-    # pred = pred.replace(" days", "")    
-    # pred = pred.replace("after ", "")  
+ 
     for k, v in SLOTS_REMAPPING.items():
         pred = pred.lower()
         pred = pred.replace(k, v)
@@ -65,16 +37,6 @@ def nested_fix(d, fix):
         return fix(str(d))
 
 def unpack_belief_states(belief_state, mode):
-
-    # def nested_fix(d, fix):
-    #     if not d or isinstance(d, bool):
-    #         return ""
-    #     elif isinstance(d, dict):  # if dict, apply to each key
-    #         return {k: nested_fix(v, fix) for k, v in d.items()}
-    #     elif isinstance(d, list):  # if list, apply to each element
-    #         return [nested_fix(elem, fix) for elem in d]
-    #     else:
-    #         return fix(str(d))
 
     unpacked_belief_states = []
     if not belief_state: 
@@ -265,13 +227,44 @@ def retrieve_golds(MWOZ_dataset, start_sample_idx, last_sample_idx, results_df):
         df["model_used"] = ["gpt-4" for _ in range(last_sample_idx-start_sample_idx)]
     return df
 
+def fix_gold(gold):
+    new_gold = {}
+    for k, v in gold.items():
+        new_gold[k.lower()] = v.lower().replace("the ", "")
+    return new_gold
 
-def compute_dst_prf(df_result):
-    L = len(df_result)
+def fix_pred(pred, slots=""):
+    new_pred = {}
+    for k, v in pred.items():
+        if slots:
+            if k.lower() not in slots:
+                continue
+        if not v or v == "None" or v == "unknown":
+            continue
+        if isinstance(v, list):
+            v = v[0]
+        if isinstance(v, int):
+            v = str(v)
+        if "area" in k:
+            v = v.replace("center", "centre")
+        for value_fix in VALUES_FIX:
+            v = v.lower().replace(value_fix, VALUES_FIX[value_fix])
+        new_pred[k.lower()] = v
+    return new_pred
+
+def compute_dst_prf(df, data_args):
+    dh = data_args.dialog_history_limit_dst
+    slot_filtering = data_args.with_slot_filtering
+    count = 0
+    count_fail = 0
+    running_bs = {}
+    prev_dialogue_id = ""
+    failed = False
     bf_match = 0
     correct_slots = 0
     total_slots = 0
     total_F1 = 0
+    L = len(df)
     results_per_domain = {"taxi":{"total_bf_match":0,
                                   "total_f1":0,
                                   "total_samples":0},
@@ -290,14 +283,59 @@ def compute_dst_prf(df_result):
                           "":{"total_bf_match":0,
                               "total_f1":0,
                               "total_samples":0}}
-    for idx in range(L):
-        turn_domain = df_result["turn_domain"][idx]
+    if len(df) != sum(df["turn_domain"].value_counts()):
+        for idx, row in df.iterrows():
+            if row["turn_domain"] is np.nan:
+                df.loc[idx, "turn_domain"] = row["domains"][2:-2] 
+    
+    for idx, row in df.iterrows():
+        if row["turn_domain"] is np.nan:
+            df.loc[idx, "turn_domain"] = row["domains"][2:-2] 
+        turn_domain = row["turn_domain"]
+        cur_id = row["id"]
+        cur_dialogue_id = row["dialogue_id"]
+        dialogue_context = row["prompt_dst"].split("CONTEXT:\n")[-1][:-14]
+        slots = [slot.lower() for slot in row["prompt_dst"].split("\n\n")[1].split("\n")[1:]]
+        slots = [slot.split(", ")[0].split(" ")[-1] if "description" in slot else slot for slot in slots]
+        if prev_dialogue_id != cur_dialogue_id:
+            running_bs = {}
+        pred = row["preds"]
+        raw_pred = pred
+        # print(pred)
 
-        pred_bs = df_result["preds_bs"][idx]
-        gold_bs = df_result["gold_bs_new"][idx]
- 
-        corrected_pred_bs = full_fix(pred_bs)
-        corrected_gold_bs = full_fix(gold_bs)
+        try:
+            pred = ast.literal_eval(pred)
+            if isinstance(pred, tuple):
+                preds = pred.copy()
+                pred = preds[0]
+                for d in preds[1:]:
+                    pred.update(d)    
+        except:
+            try:
+                preds = [ast.literal_eval(pred.replace("null", "None")) for pred in pred.split("\n")]
+                pred = preds[0].copy()
+                for d in preds[1:]:
+                    pred.update(d)
+            except:
+                failed = True
+                count_fail += 1
+                pred = {}
+        if dh == 0:
+            running_bs.update(pred)
+            if slot_filtering:
+                fixed_pred = fix_pred(running_bs, slots)
+            else:
+                fixed_pred = fix_pred(running_bs)
+        elif dh == -1:
+            if slot_filtering:
+                fixed_pred = fix_pred(pred, slots)
+            else:
+                fixed_pred = fix_pred(pred)
+        set_pred = set([k + "-" + v for k, v in fixed_pred.items()])
+        gold = ast.literal_eval(row["gold_bs"])
+        fixed_gold = fix_gold(gold)
+        set_gold = set([k + "-" + v for k, v in fixed_gold.items()])
+
 
         # slot-f1
         # turn_correct = 0
@@ -305,31 +343,21 @@ def compute_dst_prf(df_result):
         turn_FN = 0
         turn_FP = 0
         # turn_total = 0
-        for k, v in corrected_gold_bs.items():
-            if isinstance(v, dict):
-                for k1, v1 in v.items():
-                    # turn_total += 1
-                    try:
-                        #if correct in pred
-                        if corrected_pred_bs[k][k1] == v1:
-                            # turn_correct += 1
-                            turn_TP += 1
-                        else:
-                            turn_FN += 1
-                    except:
-                        turn_FN += 1
+        for k, v in fixed_gold.items():
+            if k in fixed_pred:
+                if fixed_gold[k] == fixed_pred[k]:
+                    turn_TP += 1
+                else:
+                    turn_FN += 1
+            else:
+                turn_FN += 1
 
-        for k, v in corrected_pred_bs.items():
-            if isinstance(v, dict):
-                for k1, v1 in v.items():
-                    # turn_total += 1
-                    try:
-                        #if correct in pred
-                        if corrected_gold_bs[k][k1] != v1:
-                            # turn_correct += 1
-                            turn_FP += 1
-                    except:
-                        turn_FP += 1
+        for k, v in fixed_pred.items():
+            if k in fixed_gold:
+                if fixed_gold[k] != fixed_pred[k]:
+                    turn_FP += 1
+            else:
+                turn_FP += 1
 
         # total_slots += turn_total
         # correct_slots += turn_correct
@@ -339,19 +367,27 @@ def compute_dst_prf(df_result):
 
         total_F1 += turn_F1
 
+
         results_per_domain[turn_domain]["total_f1"] += turn_F1
         results_per_domain[turn_domain]["total_samples"] += 1
 
-        if corrected_pred_bs == corrected_gold_bs:
+
+        if set_gold == set_pred:
+            count += 1
             bf_match += 1
             results_per_domain[turn_domain]["total_bf_match"] += 1
         else:
-            if turn_domain == "nothing":
-                print(gold_bs)
-                print(pred_bs)
-                print("gold", corrected_gold_bs)
-                print("pred", corrected_pred_bs)
-                print("---------")
+            # if turn_domain == "taxi":
+            # print("id", cur_id, " dialogue id", cur_dialogue_id)
+            # # print("dialogue_context", dialogue_context)
+            # print("domain", turn_domain)
+            # print("gold", fixed_gold)
+            # print("raw", raw_pred)
+            # print("pred", fixed_pred)
+            # print("----------")
+            failed = False
+
+        prev_dialogue_id = cur_dialogue_id
 
     print(f"Total JGA: {(bf_match/L)*100:.2f}")
     print(f"Total F1: {(total_F1/L)*100:.2f}")
@@ -365,11 +401,117 @@ def compute_dst_prf(df_result):
         print(f"F1: {domain_f1*100:.2f}")     
         results_per_domain[domain]["F1"] = domain_f1
         results_per_domain[domain]["JGA"] = domain_jga
-    
+
     results_per_domain["JGA"] = bf_match/L
     results_per_domain["F1"] = total_F1/L
-
+    
     return results_per_domain
+
+
+# def compute_dst_prf(df_result):
+#     L = len(df_result)
+#     bf_match = 0
+#     correct_slots = 0
+#     total_slots = 0
+#     total_F1 = 0
+#     results_per_domain = {"taxi":{"total_bf_match":0,
+#                                   "total_f1":0,
+#                                   "total_samples":0},
+#                           "attraction":{"total_bf_match":0,
+#                                         "total_f1":0,
+#                                         "total_samples":0},
+#                           "hotel":{"total_bf_match":0,
+#                                    "total_f1":0,
+#                                    "total_samples":0},
+#                           "restaurant":{"total_bf_match":0,
+#                                         "total_f1":0,
+#                                         "total_samples":0},
+#                           "train":{"total_bf_match":0,
+#                                    "total_f1":0,
+#                                    "total_samples":0},
+#                           "":{"total_bf_match":0,
+#                               "total_f1":0,
+#                               "total_samples":0}}
+#     for idx in range(L):
+#         turn_domain = df_result["turn_domain"][idx]
+
+#         pred_bs = df_result["preds_bs"][idx]
+#         gold_bs = df_result["gold_bs_new"][idx]
+ 
+#         corrected_pred_bs = full_fix(pred_bs)
+#         corrected_gold_bs = full_fix(gold_bs)
+
+#         # slot-f1
+#         # turn_correct = 0
+#         turn_TP = 0
+#         turn_FN = 0
+#         turn_FP = 0
+#         # turn_total = 0
+#         for k, v in corrected_gold_bs.items():
+#             if isinstance(v, dict):
+#                 for k1, v1 in v.items():
+#                     # turn_total += 1
+#                     try:
+#                         #if correct in pred
+#                         if corrected_pred_bs[k][k1] == v1:
+#                             # turn_correct += 1
+#                             turn_TP += 1
+#                         else:
+#                             turn_FN += 1
+#                     except:
+#                         turn_FN += 1
+
+#         for k, v in corrected_pred_bs.items():
+#             if isinstance(v, dict):
+#                 for k1, v1 in v.items():
+#                     # turn_total += 1
+#                     try:
+#                         #if correct in pred
+#                         if corrected_gold_bs[k][k1] != v1:
+#                             # turn_correct += 1
+#                             turn_FP += 1
+#                     except:
+#                         turn_FP += 1
+
+#         # total_slots += turn_total
+#         # correct_slots += turn_correct
+#         turn_precision = turn_TP / float(turn_TP+turn_FP) if (turn_TP+turn_FP)!=0 else 0
+#         turn_recall = turn_TP / float(turn_TP+turn_FN) if (turn_TP+turn_FN)!=0 else 0
+#         turn_F1 = 2 * turn_precision * turn_recall / float(turn_precision + turn_recall) if (turn_precision+turn_recall)!=0 else 0
+
+#         total_F1 += turn_F1
+
+#         results_per_domain[turn_domain]["total_f1"] += turn_F1
+#         results_per_domain[turn_domain]["total_samples"] += 1
+
+#         if corrected_pred_bs == corrected_gold_bs:
+#             bf_match += 1
+#             results_per_domain[turn_domain]["total_bf_match"] += 1
+#         else:
+#             if turn_domain == "nothing":
+#                 print(gold_bs)
+#                 print(pred_bs)
+#                 print("gold", corrected_gold_bs)
+#                 print("pred", corrected_pred_bs)
+#                 print("---------")
+
+#     print(f"Total JGA: {(bf_match/L)*100:.2f}")
+#     print(f"Total F1: {(total_F1/L)*100:.2f}")
+#     print("----")
+
+#     for domain in ["attraction", "hotel", "restaurant", "taxi", "train"]:
+#         print(f"Domain: {domain}")
+#         domain_f1 = results_per_domain[domain]['total_f1']/results_per_domain[domain]['total_samples']
+#         domain_jga = results_per_domain[domain]['total_bf_match']/results_per_domain[domain]['total_samples']
+#         print(f"JGA: {domain_jga*100:.2f}")
+#         print(f"F1: {domain_f1*100:.2f}")     
+#         results_per_domain[domain]["F1"] = domain_f1
+#         results_per_domain[domain]["JGA"] = domain_jga
+    
+#     results_per_domain["JGA"] = bf_match/L
+#     results_per_domain["F1"] = total_F1/L
+
+#     return results_per_domain
 
 
 

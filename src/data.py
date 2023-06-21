@@ -16,6 +16,7 @@ class PromptConstructor():
         self.config = config
         self.instructions = config["INSTRUCTIONS"]
         self.prompt_templates = config["PROMPT_TEMPLATES"]
+        self.examples = config["EXAMPLES"]
         
     def _get_slots_from_domains(self, domains, ontology, with_slot_description, with_all_slots, with_slot_domain_diff):
         
@@ -107,7 +108,7 @@ class PromptConstructor():
 #         return slots_info
     
     
-    def _build_prompt(self, mode="", dialogue_context="", ontology="", slots="", dialogue_acts="", belief_states="", database=""):
+    def _build_prompt(self, mode="", example="", dialogue_context="", ontology="", slots="", dialogue_acts="", belief_states="", database=""):
         prompt = ""
         if mode == "dst":
             instruction = self.instructions["instruction_with_slots"]
@@ -116,6 +117,7 @@ class PromptConstructor():
                                       template = template_variables["template"])
             prompt = template.format(instruction=instruction,
                                      slots=slots,
+                                     example=example,
                                      dialogue_context=dialogue_context)
             
         elif mode == "dst_recorrect":
@@ -204,11 +206,21 @@ class MWOZ_Dataset(PromptConstructor):
                 self._process_dialogue_log(sample=sample,
                                            dialogue_log=dialogue_log)
 
+        # self.dataset = pd.DataFrame(self.dataset)
+        # if self.single_domain_only:
+        #     for index, row in tqdm(self.dataset.iterrows()):
+        #         if len(row["domains"]) != 1:
+        #             self.dataset.drop(index, inplace=True)
+                    
         self.dataset = pd.DataFrame(self.dataset)
         if self.single_domain_only:
             for index, row in tqdm(self.dataset.iterrows()):
-                if len(row["domains"]) != 1:
+                if "sng" not in row["dialogue_id"].lower():
                     self.dataset.drop(index, inplace=True)
+
+        for index, row in self.dataset.iterrows():
+            if row["turn_domain"] == "":
+                self.dataset.loc[index, 'turn_domain'] = row["domains"][0]
 
                     
     def _get_mwoz_data(self, mwoz_path):
@@ -282,6 +294,10 @@ class MWOZ_Dataset(PromptConstructor):
                                              with_slot_description=self.with_slot_description,
                                              with_slot_domain_diff=self.with_slot_domain_diff,
                                              with_all_slots=self.with_all_slots) # or all
+        if self.dialog_history_limit_dst == 0:
+            example = self.examples["dst_dh0"]
+        else:
+            example = self.examples["dst_dh-1"]
 
         for turn_nb, turn in enumerate(dialogue_log):
 
@@ -297,6 +313,7 @@ class MWOZ_Dataset(PromptConstructor):
             dialogue_context_dst = dialog_history_dst + utterance
             prompt_dst = self._build_prompt(mode="dst",
                                             slots=slots,
+                                            example=example,
                                             dialogue_context=dialogue_context_dst)
             
             lexicalized_act = self._lexicalize_act(cur_system_act)

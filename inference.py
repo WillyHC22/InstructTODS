@@ -16,7 +16,7 @@ from transformers import (
 )
 
 from src.config import CONFIG
-from src.e2e.e2e_utils import E2E_InstrucTOD
+from src.e2e.e2e_utils import E2E_InstrucTOD, get_subset_multi
 from src.data import MWOZ_Dataset
 from src.utils.args_helper import DataArguments, ModelArguments, PromptingArguments
 
@@ -51,7 +51,9 @@ def main():
     
     mwoz = MWOZ_Dataset(CONFIG, data_args)
     dataset = mwoz.dataset
-
+    
+    print(f"Task - {prompting_args.task}")
+    print(f"Saving at - {data_args.save_path}")
 
     openai.organization = CONFIG["openai_organization"]
     openai.api_key= CONFIG["openai_api_key"]
@@ -79,6 +81,9 @@ def main():
     else:
         dataset = dataset[data_args.start_idx:]
         
+    if data_args.multi_only:
+        dataset = get_subset_multi(dataset)
+        
     if prompting_args.task == "e2e_instructod":
         instructod = E2E_InstrucTOD(CONFIG,
                                     model_args,
@@ -86,6 +91,7 @@ def main():
                                     dataset)
         if data_args.do_inference:
             preds = instructod.inference()
+        
         
     
     else:

@@ -7,6 +7,7 @@ src/DST/processed_results/
 src/DST/final_results/
 src/DST/correct_results/
 src/e2e/results/
+src/e2e/baselines/
 src/RG/results/
 src/IC/dataset/
 src/IC/base/

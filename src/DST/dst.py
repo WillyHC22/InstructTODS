@@ -30,6 +30,22 @@ SLOTS_REMAPPING = {
         "free":"yes", "free wifi":"yes", "free parking":"yes"
 }
 
+VALUES_FIX = {"fen ditton":"fenditton",
+              "john's":"johns", "catherine's":"catherines",
+              "the bridge guest":"bridge guest", "the rajmahal": "rajmahal", "the bedouin":"bedouin",
+              "ian hong":"lan hong", "pizza express":"pizza hut",
+              "express by holiday inn cambridge":"inn cambridge", "alpha-milton":"alpha-milton guest house", "el shaddai":"el shaddai guesthouse",
+              "bringham new street":"birmingham new street",
+              "king's lynn":"kings lynn",
+              "nightclub":"night club", "concert hall":"concerthall", "guest house guest house":"guest house",
+              "kettle's yard":"kettles yard",
+              "3 00":"03:00", "9:30":"09:30", "2:30":"02:30", "1515hrs":"15:15", "9:15":"09:15", "109:30":"19:30", "9:45":"09:45", "7:15 p.m.":"07:15", "5:15":"05:15",
+              "009:15":"09:15", "009:30":"09:30", "109:30":"19:30", "109:15":"19:15", "102:30":"12:30",
+              "after ":"", " nights":"",
+              "town centre":"centre",
+             
+              "free":"yes", "any":"dontcare"}
+
 GENERAL_TYPO = {
         # type
         "guesthouse":"guest house", "guesthouses":"guest house", "guest":"guest house", "mutiple sports":"multiple sports",
@@ -74,46 +90,3 @@ SLOTS_DESCRIPTIONS = {
     "food":"type of food",
     "time":"time for the booking",
 }
-
-
-#Free-form remapping
-# FIXED_TYPOS_REMAPPING = {
-#     #general
-#     "thanks": "thank", "unknown":"?", "required":"?", "do nt care":"any",
-#     #taxi
-#     "from": "depart", "pickup_location":"depart", "taxi_departure":"depart", "leaving_from":"depart", "taxi_departure_time":"depart",
-#     "to": "dest", "destination": "dest",
-#     "taxi_time": "leave", "departure_time":"leave", "taxi_pickuptime":"leave", "taxi_leave_time":"leave", "departure time":"leave",
-#     "time_arrival": "arrive", "taxi_arrival_time":"arrive",
-#     "taxi_type":"car", "taxi_types":"car",
-#     "taxi_phone":"phone",
-#     # "after 17:15":"17:15", "after 16:30":"16:30", "after 15:00":"15:00", "after 04:30":"4:30", "after 11:00":"11:00",
-#     #restaurant
-#     "pricerange":"price",
-#     "address":"addr",
-#     "number_of_people":"people", "reservation_people":"people", "party_size":"people", "book_people":"people", "n_people":"people",
-#     "reservation_time":"time", "book_time":"time",
-#     "reservation_date":"day", "reservation_day":"day", "book_day":"day",
-#     "reference number":"ref",
-#     #hotel
-#     "pricerange":"price",
-#     "nights":"stay", "stay_duration":"stay", "duration":"stay", "reservation_duration":"stay", "n_nights":"stay",
-#     "arrival_day":"day", "check_in_day":"day", "start_day":"day", "start_date":"day", "checkin_day":"day", "reservation_start":"day", "starting_date":"day", "date":"day", "date_start":"day",
-#     "n":"people", "number_of_guests":"people",
-#     "address":"addr", 
-#     "postcode":"post",
-#     #train
-#     "departure": "depart", "departure_location":"depart", "origin":"depart",
-#     "destination": "dest",
-#     "timeofday": "leave", "pickup_time": "leave", "leaveat": "leave", "desired_departure_time":"leave",
-#     "arriveby": "arrive", "arrival_time": "arrive", "arriving_by":"arrive", "arrive_by":"arrive",
-#     #attraction
-#     "ticket_count":"people", "ticket":"people", "tickets":"people",
-#     #others
-#     "michaelhouse cafe": "mic",
-#     "the holy trinity church": "holy trinity church",
-#     "alpha - milton guest house": "alpha-milton guest house",
-#     "3:00": "03:00",
-# }
-
-

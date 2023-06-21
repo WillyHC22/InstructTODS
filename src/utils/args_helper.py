@@ -115,6 +115,19 @@ class DataArguments:
         default=False,
         metadata={"help": "use to do inference with the e2e agent setting"}
     )
+    accumulate_bs: Optional[bool] = field(
+        default=False,
+        metadata={"help": "evaluation setting to accumulate all turn-level bs"}
+    )   
+    with_slot_filtering: Optional[bool] = field(
+        default=False,
+        metadata={"help": "slot filtering during DST eval (filter non-existent slots)"}
+    )   
+    multi_only: Optional[bool] = field(
+        default=False,
+        metadata={"help": "setting to inference/evaluate only the multi domain samples"}
+    )   
+    
 
 @dataclass
 class PromptingArguments(TrainingArguments):
