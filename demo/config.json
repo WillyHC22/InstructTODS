@@ -1,0 +1,51 @@
+{
+    "task_objective": "Book a restaurant",
+    "proxy_bs": {
+        "instruction": "Suppose you have access to a database where all the column attributes are given in INFORMATION, what do you need to query to the database in order to reply to the user in the following conversation?",
+        "example": "USER: I need fruits.\nSYSTEM: Do you have any preferences?\nUSER: Yes, apples if possible. How expensive and how many are there?\n\nNeed: Information about pricerange and and count for apple\n\nUSER: Cool, that asnwers my question.\nSYSTEM: I am happy to help. Anything else needed?\nUSER: I'm done, thanks!\n\nNeed: Information about nothing\n\nUSER: I'm looking for a popular zoo around here\nSYSTEM: There are multiple zoos I can recommend. Any preference on the location?\nUSER: I want it to be in the west part of town\n\nNeed: Information about zoo in the west",
+        "template": "{instruction}\n\nYou can follow these examples:{example}\n\nINFORMATION: {information}\n{dialogue_context}\n\nNeed:",
+        "input_variables": [
+            "instruction",
+            "information",
+            "example",
+            "dialogue_context"
+        ]
+    },
+    "response_generation": {
+        "instruction": "In a task oriented dialogue setting, generate a natural and helpful SYSTEM response to the USER query in the conversation provided in CONTEXT. You should follow the information provided in ACT to generate this answer. Do not mention that you are referring to a dataframe and don't overload the user with too many choices. You have the ability to perform confirm bookings for users:",
+        "example": "USER: I need a place to fish\nSYSTEM: Any preference in the type of fish?\nUSER: Preferably salmons, but sardines are also fine\n\nACT: blue lake, 37th avenue\n\nSYSTEM: How about blue lake, 37th avenue in that case?",
+        "template": "{instruction}\n\nYou can follow these examples:{example}\n\nCONTEXT:\n{dialogue_context}\n\nACT:{dialogue_act}\n\nSYSTEM:",
+        "input_variables": [
+            "instruction",
+            "example",
+            "dialogue_context",
+            "dialogue_act"
+        ]
+    },
+    "chitchat": {
+        "instruction": "Given the following dialogue context between a USER and a SYSTEM, generate the response of SYSTEM as naturally as possible. Only answer questions that you have factual knowledge about. If you do not have the knowledge to answer the question, simply state so to the user:",
+        "template": "{instruction}\n\n{dialogue_context}",
+        "input_variables": [
+            "instruction",
+            "dialogue_context"
+        ]
+    },
+    "classification": {
+        "instruction": "Given the TASK and the provided dialogue context, classify whether the user UTTERANCE is related to the conversation topic or not. As long as the utterance is somewhat relate to the domain of the conversation, then it's fine. Just answer with 'yes' or 'no':",
+        "example": "USER: Give me information about a 3 star hotel\nSYSTEM: Sure! I found 5 that could be interesting.\nTASK: Book a hotel\nUSER UTTERANCE: I want to buy toys\nRELATED: No\n\nUSER: Where is the turtle attraction?\nSYSTEM: Right next to the ice cream shop\nTASK: Recommend an attraction\nUSER UTTERANCE: Ah I see. How do I go there?\nRELATED: Yes\n\nUSER: Where are the balloons?\nSYSTEM: In a park nearby\nTASK: Book a hotel\nUSER UTTERANCE: Fine, how many stars is this hotel?\nRELATED: Yes\n\nUSER: Where is flight A301 going?\nSYSTEM: This flight is going to Spain\nUSER: And how about B563?\nSYSTEM: This one is going to Greece.\nTASK: Buy an airplane ticket\nUSER UTTERANCE: I am trying to go to Barcelona, so A301 right?\nRELATED: Yes",
+        "template": "{instruction}\n\nYou can follow these examples:{example}\n\n{dialogue_context}\nTASK: {task}\nUSER UTTERANCE: {utterance}\nRELATED:",
+        "input_variables": [
+            "instruction",
+            "example",
+            "task",
+            "dialogue_context",
+            "utterance"
+        ]
+    },
+    "mode": {
+        "instruction": "",
+        "example": "",
+        "template": "",
+        "input_variables": ""
+    }
+}
